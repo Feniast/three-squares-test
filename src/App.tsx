@@ -22,6 +22,8 @@ import vertex from './shader/vertex.glsl';
 import fragment from './shader/fragment.glsl';
 import vertexSquares from './shader/vertex-squares.glsl';
 import fragmentSquares from './shader/fragment-squares.glsl';
+import vertexParticles from './shader/vertex-particles.glsl';
+import fragmentParticles from './shader/fragment-particles.glsl';
 import { PlaneBufferGeometry } from 'three';
 
 interface DatGuiSetting {
@@ -46,16 +48,26 @@ const SquaresShaderMaterial = shaderMaterial(
   {
     mouse: new THREE.Vector3(),
     size: new THREE.Vector2(),
-    time: 0
+    time: 0,
   },
   vertexSquares,
   fragmentSquares,
   () => null
 );
 
+const ParticlesShaderMaterial = shaderMaterial(
+  {
+    time: 0,
+  },
+  vertexParticles,
+  fragmentParticles,
+  () => null
+);
+
 extend({
   VideoShaderMaterial,
   SquaresShaderMaterial,
+  ParticlesShaderMaterial,
 });
 
 const useDatGui = <T extends Record<string, DatGuiSetting>>(settings: T) => {
@@ -162,7 +174,7 @@ const size = 40;
 const cellSize = 0.08;
 
 const Squares = () => {
-  const { clock } = useThree();
+  const { clock, size: dimensions, scene } = useThree();
   const mesh = useUpdate<THREE.InstancedMesh>(() => {
     if (!mesh.current) return;
     const dummy = new THREE.Object3D();
@@ -195,6 +207,10 @@ const Squares = () => {
       ref={mesh}
       args={[null, null, size ** 2]}
       onPointerMove={(e) => {
+        const mouseX = (e.clientX / dimensions.width) * 2 - 1;
+        const mouseY = (e.clientY / dimensions.height) * 2 - 1;
+        scene.rotation.x = mouseY / 10;
+        scene.rotation.y = mouseX / 10;
         material.current.uniforms.mouse.value = e.point;
       }}
     >
@@ -211,11 +227,76 @@ const Squares = () => {
   );
 };
 
+const Points = () => {
+  const { clock } = useThree();
+  const geometry = useMemo(() => {
+    const bufferGeo = new THREE.BufferGeometry();
+    const vertices: number[] = [];
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        const x = j * cellSize - 0.5 * size * cellSize - 0.5 * cellSize;
+        const y = -(i * cellSize - 0.5 * size * cellSize - 0.5 * cellSize);
+        vertices.push(x, y, 0);
+      }
+    }
+    bufferGeo.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(vertices, 3)
+    );
+
+    return bufferGeo;
+  }, []);
+
+  const material = useRef<THREE.ShaderMaterial>();
+
+  useFrame(() => {
+    material.current.uniforms.time.value = clock.elapsedTime;
+  });
+
+  return (
+    <points position-z={0.008} geometry={geometry}>
+      {/* @ts-ignore */}
+      <particlesShaderMaterial ref={material} transparent attach="material" />
+    </points>
+  );
+};
+
+const Lines = () => {
+  const geometry = useMemo(() => {
+    const geo = new THREE.Geometry();
+    const l = -cellSize * size * 0.5;
+    const r = -l;
+    for (let i = 0; i < size; i++) {
+      const d = i * cellSize - 0.5 * size * cellSize - 0.5 * cellSize;
+      geo.vertices.push(new THREE.Vector3(l, d, 0));
+      geo.vertices.push(new THREE.Vector3(r, d, 0));
+      geo.vertices.push(new THREE.Vector3(d, l, 0));
+      geo.vertices.push(new THREE.Vector3(d, r, 0));
+    }
+    return geo;
+  }, []);
+
+  return (
+    // z-fighting so 0.009 here
+    <lineSegments position-z={0.009} geometry={geometry}>
+      {/* @ts-ignore */}
+      <meshBasicMaterial
+        opacity={0.1}
+        color={0xffffff}
+        transparent
+        attach="material"
+      />
+    </lineSegments>
+  );
+};
+
 const Scene = () => {
   return (
     <>
       <Bg />
       <Squares />
+      <Points />
+      <Lines />
     </>
   );
 };
@@ -224,7 +305,7 @@ const CameraSet = () => {
   const { aspect, camera } = useThree();
   useLayoutEffect(() => {
     const dist = camera.position.z;
-    const height = 1;
+    const height = 0.8; // make the scene "bigger", so the rotation of scene will not show the blank space
     (camera as THREE.PerspectiveCamera).fov =
       2 * (180 / Math.PI) * Math.atan(height / 2 / dist);
     camera.updateProjectionMatrix();
