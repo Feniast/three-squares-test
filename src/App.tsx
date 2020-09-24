@@ -4,7 +4,7 @@ import React, {
   useMemo,
   useLayoutEffect,
   useState,
-} from 'react';
+} from "react";
 import {
   Canvas,
   useFrame,
@@ -12,23 +12,23 @@ import {
   extend,
   useThree,
   useUpdate,
-} from 'react-three-fiber';
-import * as THREE from 'three';
-import { OrbitControls, shaderMaterial } from 'drei';
-import * as dat from 'dat.gui';
-import { useDeepMemo, useDeepCompareEffect } from './useDeep';
-import myVideo from 'url:./assets/video.mp4';
-import vertex from './shader/vertex.glsl';
-import fragment from './shader/fragment.glsl';
-import vertexSquares from './shader/vertex-squares.glsl';
-import fragmentSquares from './shader/fragment-squares.glsl';
-import vertexParticles from './shader/vertex-particles.glsl';
-import fragmentParticles from './shader/fragment-particles.glsl';
-import { PlaneBufferGeometry } from 'three';
+} from "react-three-fiber";
+import * as THREE from "three";
+import { OrbitControls, shaderMaterial } from "drei";
+import * as dat from "dat.gui";
+import { useDeepMemo, useDeepCompareEffect } from "./useDeep";
+import myVideo from "url:./assets/video.mp4";
+import vertex from "./shader/vertex.glsl";
+import fragment from "./shader/fragment.glsl";
+import vertexSquares from "./shader/vertex-squares.glsl";
+import fragmentSquares from "./shader/fragment-squares.glsl";
+import vertexParticles from "./shader/vertex-particles.glsl";
+import fragmentParticles from "./shader/fragment-particles.glsl";
+import { PlaneBufferGeometry } from "three";
 
 interface DatGuiSetting {
   value: string | number | undefined;
-  type?: 'color' | undefined;
+  type?: "color" | undefined;
   min?: number;
   max?: number;
   step?: number;
@@ -71,8 +71,8 @@ extend({
 });
 
 const useDatGui = <T extends Record<string, DatGuiSetting>>(settings: T) => {
-  const obj = useDeepMemo<Record<keyof T, DatGuiSetting['value']>>(() => {
-    const o = {} as Record<keyof T, DatGuiSetting['value']>;
+  const obj = useDeepMemo<Record<keyof T, DatGuiSetting["value"]>>(() => {
+    const o = {} as Record<keyof T, DatGuiSetting["value"]>;
     Object.keys(settings).forEach((key) => {
       const setting = settings[key];
       const { value } = setting;
@@ -86,7 +86,7 @@ const useDatGui = <T extends Record<string, DatGuiSetting>>(settings: T) => {
     Object.keys(settings).forEach((key) => {
       const setting = settings[key];
       const { type, min, max, step } = setting;
-      if (type === 'color') {
+      if (type === "color") {
         inst.addColor(obj, key);
       } else {
         inst.add(obj, key, min, max, step);
@@ -104,11 +104,11 @@ const Bg = () => {
   const { aspect, size } = useThree();
   const [, reRender] = useState<any>();
   const video = useMemo(() => {
-    const video = document.createElement('video');
+    const video = document.createElement("video");
     video.muted = true;
     video.loop = true;
     video.src = myVideo;
-    video.addEventListener('canplay', () => {
+    video.addEventListener("canplay", () => {
       reRender({});
       video.play();
     });
@@ -157,7 +157,7 @@ const Bg = () => {
   );
 
   return (
-    <mesh ref={plane}>
+    <mesh position-z={0} ref={plane}>
       <planeBufferGeometry args={[1, 1]} attach="geometry" />
       {/* @ts-ignore */}
       <videoShaderMaterial
@@ -203,7 +203,7 @@ const Squares = () => {
 
   return (
     <instancedMesh
-      position={[0, 0, 0.01]}
+      position={[0, 0, 0.0059]}
       ref={mesh}
       args={[null, null, size ** 2]}
       onPointerMove={(e) => {
@@ -240,7 +240,7 @@ const Points = () => {
       }
     }
     bufferGeo.setAttribute(
-      'position',
+      "position",
       new THREE.Float32BufferAttribute(vertices, 3)
     );
 
@@ -254,7 +254,7 @@ const Points = () => {
   });
 
   return (
-    <points position-z={0.008} geometry={geometry}>
+    <points position-z={0.005} geometry={geometry}>
       {/* @ts-ignore */}
       <particlesShaderMaterial ref={material} transparent attach="material" />
     </points>
@@ -278,7 +278,7 @@ const Lines = () => {
 
   return (
     // z-fighting so 0.009 here
-    <lineSegments position-z={0.009} geometry={geometry}>
+    <lineSegments position-z={0.006} geometry={geometry}>
       {/* @ts-ignore */}
       <meshBasicMaterial
         opacity={0.1}
